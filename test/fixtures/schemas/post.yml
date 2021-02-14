@@ -1,0 +1,12 @@
+type: object
+required: [user, content, comments]
+properties:
+    user:
+        type: string
+    text:
+        type: string
+    comments:
+        type: array
+        items:
+            anyOf:
+            -   type: string

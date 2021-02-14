@@ -1,0 +1,9 @@
+type: object
+required: [user, post, text]
+properties:
+    user:
+        type: string
+    post:
+        type: string
+    text:
+        type: string
