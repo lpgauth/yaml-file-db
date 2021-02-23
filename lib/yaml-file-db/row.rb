@@ -13,26 +13,41 @@ module YDB
     end
 
     def build_relationships(db, keywords)
-      self.instance_variables.each do |var|
-        next if INTERNAL_VARS.include? var
-        keyword = var.to_s[1..-1]
-
-        if keywords.include? keyword
-          if keyword.pluralize == keyword
-            array = instance_variable_get var
-            entities = db.public_send(keyword.to_sym)
-            value = []
-            array.each do |primary_key|
-              entity = entities[primary_key]
-              raise ValidationError.new("invalid primary_key #{primary_key}") if entity.nil?
-              value << entity
+      iterate_over_columns do |key, value|
+        if keywords.include?(key)
+          if key.pluralize == key
+            rows = []
+            table = db.public_send(key.to_sym)
+            value.each do |primary_key|
+              row = table[primary_key]
+              raise ValidationError.new("invalid primary_key: #{primary_key} is not part of #{key}") if row.nil?
+              rows << row
             end
-            instance_variable_set("@#{keyword}", value)
+            instance_variable_set("@#{key}", rows)
           else
-            primary_key = instance_variable_get var
-            entity = db.public_send(keyword.pluralize.to_sym)[primary_key]
-            raise ValidationError.new("invalid primary_key #{primary_key}") if entity.nil?
-            instance_variable_set("@#{keyword}", entity)
+            row = db.public_send(key.pluralize.to_sym)[value]
+            raise ValidationError.new("invalid primary_key: #{primary_key} is not part of #{key}") if row.nil?
+            instance_variable_set("@#{key}", row)
+          end
+        end
+      end
+    end
+
+    def check_relationships(db, keywords)
+      iterate_over_columns do |key, value|
+        if keywords.include?(key)
+          # move row into array to make it iterable
+          value = [value] if value.is_a?(YDB::Row)
+          value.each do |row|
+            if row.respond_to?(self.class.to_s.downcase.to_sym)
+              unless row.public_send(self.class.to_s.downcase.to_sym) == self
+                raise ValidationError.new("inconsistent relationship: #{row.id} doesn't link back to #{self.id}")
+              end
+            elsif row.respond_to?(self.class.to_s.downcase.pluralize.to_sym)
+              unless row.public_send(self.class.to_s.downcase.pluralize.to_sym).include?(self)
+                raise ValidationError.new("inconsistent relationship: #{row.id} doesn't link back to #{self.id}")
+              end
+            end
           end
         end
       end
@@ -53,8 +68,17 @@ module YDB
 
       doc.each do |name, value|
         instance_variable_set("@#{name}", value)
-        next if self.respond_to? name.to_sym
+        next if self.respond_to?(name.to_sym)
         self.class.send("attr_reader", name.to_sym)
+      end
+    end
+
+    def iterate_over_columns(&block)
+      self.instance_variables.each do |var|
+        next if INTERNAL_VARS.include?(var)
+        key = var.to_s[1..-1]
+        value = instance_variable_get(var)
+        block.call(key, value)
       end
     end
 

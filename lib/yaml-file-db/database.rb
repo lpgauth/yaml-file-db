@@ -14,6 +14,7 @@ module YDB
     def build()
       build_tables()
       build_relationships()
+      check_relationships()
       self
     end
 
@@ -43,17 +44,37 @@ module YDB
     end
 
     def build_relationships()
+      keywords = keywords()
+      iterate_over_rows do |row|
+        row.build_relationships(self, keywords)
+      end
+    end
+
+    def check_relationships()
+      keywords = keywords()
+      iterate_over_rows do |row|
+        row.check_relationships(self, keywords)
+      end
+    end
+
+    private
+
+    def keywords()
       keywords = []
       (self.instance_variables - INTERNAL_VARS).each do |var|
         keywords << var.to_s[1..-1]
         keywords << var.to_s[1..-1].singularize
       end
+      keywords
+    end
+
+    def iterate_over_rows(&block)
       self.instance_variables.each do |var|
         next if INTERNAL_VARS.include? var
         table = instance_variable_get var
         table.each do |id, row|
           begin
-            row.build_relationships(self, keywords)
+            block.call(row)
           rescue ValidationError => error
             @errors << "#{row.source}: #{error.to_s}"
           end
