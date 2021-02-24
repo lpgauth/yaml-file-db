@@ -34,7 +34,7 @@ module YDB
             row = Object.const_get(klass_name).new(source, schema_path)
             table[row.id] = row
           rescue ValidationError => error
-            @errors << "#{source}: #{error.to_s}"
+            @errors << "[#{source.split("/")[-3..-1].join("/")}] #{error.to_s}"
           end
         end
 
@@ -76,7 +76,7 @@ module YDB
           begin
             block.call(row)
           rescue ValidationError => error
-            @errors << "#{row.source}: #{error.to_s}"
+            @errors << "[#{row.source.split("/")[-3..-1].join("/")}] #{error.to_s}"
           end
         end
       end

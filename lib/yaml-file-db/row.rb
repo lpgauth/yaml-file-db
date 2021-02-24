@@ -20,13 +20,13 @@ module YDB
             table = db.public_send(key.to_sym)
             value.each do |primary_key|
               row = table[primary_key]
-              raise ValidationError.new("invalid primary_key: #{primary_key} is not part of #{key}") if row.nil?
+              raise ValidationError.new("Invalid primary_key: #{primary_key} isn't part of table #{key}") if row.nil?
               rows << row
             end
             instance_variable_set("@#{key}", rows)
           else
             row = db.public_send(key.pluralize.to_sym)[value]
-            raise ValidationError.new("invalid primary_key: #{primary_key} is not part of #{key}") if row.nil?
+            raise ValidationError.new("Invalid primary_key: #{primary_key} isn't part of table #{key}") if row.nil?
             instance_variable_set("@#{key}", row)
           end
         end
@@ -41,11 +41,11 @@ module YDB
           value.each do |row|
             if row.respond_to?(self.class.to_s.downcase.to_sym)
               unless row.public_send(self.class.to_s.downcase.to_sym) == self
-                raise ValidationError.new("inconsistent relationship: #{row.id} doesn't link back to #{self.id}")
+                raise ValidationError.new("Inconsistent relationship: #{row.id} doesn't link back to #{self.id}")
               end
             elsif row.respond_to?(self.class.to_s.downcase.pluralize.to_sym)
               unless row.public_send(self.class.to_s.downcase.pluralize.to_sym).include?(self)
-                raise ValidationError.new("inconsistent relationship: #{row.id} doesn't link back to #{self.id}")
+                raise ValidationError.new("Inconsistent relationship: #{row.id} doesn't link back to #{self.id}")
               end
             end
           end
@@ -57,13 +57,13 @@ module YDB
 
     def build(source, schema_path)
       doc = YAML.load(File.read(source))
-      raise ValidationError.new("invalid YAML") if doc == false
+      raise ValidationError.new("Invalid YAML document") if doc == false
 
       schema = YAML.load(File.read(schema_path))
       begin
         JSON::Validator.validate!(schema, doc, :parse_data => false)
       rescue JSON::Schema::ValidationError => error
-        raise ValidationError.new("invalid data (#{error.message})")
+        raise ValidationError.new("Invalid data: #{error.message}")
       end
 
       doc.each do |name, value|
@@ -83,7 +83,7 @@ module YDB
     end
 
     def validate_filename()
-      raise ValidationError.new("invalid filename") unless self.id =~ /^[\w-]+$/
+      raise ValidationError.new("Invalid filename: #{self.id} doesn't follow dash-case convention") unless self.id =~ /^[\w-]+$/
     end
 
   end
