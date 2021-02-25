@@ -83,7 +83,7 @@ module YDB
     end
 
     def validate_filename()
-      raise ValidationError.new("Invalid filename: #{self.id} doesn't follow dash-case convention") unless self.id =~ /^[\w-]+$/
+      raise ValidationError.new("Invalid filename: #{self.id} doesn't follow dash-case convention") unless self.id =~ /\A[a-z\d][a-z\d-]*[a-z\d]\z/i
     end
 
   end
