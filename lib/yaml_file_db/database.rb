@@ -1,7 +1,8 @@
+# frozen_string_literal: true
+
 module YDB
   class Database
-
-    INTERNAL_VARS = [:@errors, :@schemas, :@source].freeze
+    INTERNAL_VARS = %i[@errors @schemas @source].freeze
 
     attr_reader :errors, :schemas, :source
 
@@ -11,16 +12,16 @@ module YDB
       @source = source
     end
 
-    def build()
-      build_tables()
-      build_relationships()
-      check_relationships()
+    def build
+      build_tables
+      build_relationships
+      check_relationships
       self
     end
 
     private
 
-    def build_tables()
+    def build_tables
       Dir["#{@source}/*"].each do |table_path|
         table = {}
 
@@ -30,57 +31,51 @@ module YDB
         schema_path = "#{@schemas}/#{table_name.singularize}.yml"
 
         Dir["#{table_path}/*.yml"].each do |source|
-          begin
-            row = Object.const_get(klass_name).new(source, schema_path)
-            table[row.id] = row
-          rescue ValidationError => error
-            @errors << "[#{source.split("/")[-3..-1].join("/")}] #{error.to_s}"
-          end
+          row = Object.const_get(klass_name).new(source, schema_path)
+          table[row.id] = row
+        rescue ValidationError => e
+          @errors << "[#{source.split('/')[-3..].join('/')}] #{e}"
         end
 
         instance_variable_set("@#{table_name}", table)
-        self.class.send("attr_reader", table_name.to_sym)
+        self.class.send('attr_reader', table_name.to_sym)
       end
     end
 
-    def build_relationships()
+    def build_relationships
       keywords = keywords()
       iterate_over_rows do |row|
         row.build_relationships(self, keywords)
       end
     end
 
-    def check_relationships()
+    def check_relationships
       keywords = keywords()
       iterate_over_rows do |row|
         row.check_relationships(self, keywords)
       end
     end
 
-    private
-
-    def keywords()
+    def keywords
       keywords = []
-      (self.instance_variables - INTERNAL_VARS).each do |var|
-        keywords << var.to_s[1..-1]
-        keywords << var.to_s[1..-1].singularize
+      (instance_variables - INTERNAL_VARS).each do |var|
+        keywords << var.to_s[1..]
+        keywords << var.to_s[1..].singularize
       end
       keywords
     end
 
     def iterate_over_rows(&block)
-      self.instance_variables.each do |var|
+      instance_variables.each do |var|
         next if INTERNAL_VARS.include? var
+
         table = instance_variable_get var
-        table.each do |id, row|
-          begin
-            block.call(row)
-          rescue ValidationError => error
-            @errors << "[#{row.source.split("/")[-3..-1].join("/")}] #{error.to_s}"
-          end
+        table.each do |_id, row|
+          block.call(row)
+        rescue ValidationError => e
+          @errors << "[#{row.source.split('/')[-3..].join('/')}] #{e}"
         end
       end
     end
-
   end
 end
