@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'yaml_file_db'
+require 'yaml-file-db'
 require 'minitest/autorun'
 
 class Test < Minitest::Test
