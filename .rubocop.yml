@@ -2,6 +2,10 @@ AllCops:
   TargetRubyVersion: 2.6
   NewCops: enable
 
+Naming/FileName:
+  Exclude:
+      - 'lib/yaml-file-db.rb'
+
 Metrics/AbcSize:
   Max: 65
 
