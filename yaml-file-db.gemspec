@@ -12,5 +12,5 @@ Gem::Specification.new do |s|
   s.name = 'yaml-file-db'
   s.required_ruby_version = '>= 2.6.0'
   s.summary = 'database'
-  s.version = '0.1.3'
+  s.version = '0.1.5'
 end
