@@ -15,6 +15,7 @@ module YDB
     end
 
     def build_relationships(db, keywords)
+      errors = []
       iterate_over_columns do |key, value|
         if keywords.include?(key)
           if key.pluralize == key
@@ -22,39 +23,41 @@ module YDB
             table = db.public_send(key.to_sym)
             value.each do |primary_key|
               row = table[primary_key]
-              raise ValidationError, "Invalid primary_key: #{primary_key} isn't part of table #{key}" if row.nil?
-
+              errors << "Invalid primary_key: #{primary_key} isn't part of table #{key}" if row.nil?
               rows << row
             end
             instance_variable_set("@#{key}", rows)
           else
             row = db.public_send(key.pluralize.to_sym)[value]
-            raise ValidationError, "Invalid primary_key: #{value} isn't part of table #{key.pluralize}" if row.nil?
-
+            errors << "Invalid primary_key: #{value} isn't part of table #{key.pluralize}" if row.nil?
             instance_variable_set("@#{key}", row)
           end
         end
       end
+      errors
     end
 
     def check_relationships(_db, keywords)
+      errors = []
       iterate_over_columns do |key, value|
         if keywords.include?(key)
-          # move row into array to make it iterable
+          next if value.nil?
+
           value = [value] if value.is_a?(YDB::Row)
           value.each do |row|
             if row.respond_to?(self.class.to_s.downcase.to_sym)
               unless row.public_send(self.class.to_s.downcase.to_sym) == self
-                raise ValidationError, "Inconsistent relationship: #{row.id} doesn't link back to #{id}"
+                errors << "Inconsistent relationship: #{row.id} doesn't link back to #{id}"
               end
             elsif row.respond_to?(self.class.to_s.downcase.pluralize.to_sym)
               unless row.public_send(self.class.to_s.downcase.pluralize.to_sym).include?(self)
-                raise ValidationError, "Inconsistent relationship: #{row.id} doesn't link back to #{id}"
+                errors << "Inconsistent relationship: #{row.id} doesn't link back to #{id}"
               end
             end
           end
         end
       end
+      errors
     end
 
     private
