@@ -71,9 +71,9 @@ module YDB
 
         table = instance_variable_get var
         table.each do |_id, row|
-          block.call(row)
-        rescue ValidationError => e
-          @errors << "[#{row.source.split('/')[-3..].join('/')}] #{e}"
+          block.call(row).each do |error|
+            @errors << "[#{row.source.split('/')[-3..].join('/')}] #{error}"
+          end
         end
       end
     end
