@@ -29,7 +29,7 @@ module YDB
             instance_variable_set("@#{key}", rows)
           else
             row = db.public_send(key.pluralize.to_sym)[value]
-            raise ValidationError, "Invalid primary_key: #{primary_key} isn't part of table #{key}" if row.nil?
+            raise ValidationError, "Invalid primary_key: #{value} isn't part of table #{key.pluralize}" if row.nil?
 
             instance_variable_set("@#{key}", row)
           end
