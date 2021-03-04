@@ -49,7 +49,7 @@ class Test < Minitest::Test
       "[database2/comments/comment_1.yml] Invalid filename: comment_1 doesn't follow dash-case convention",
       "[database2/comments/comment-3.yml] Invalid data: The property '#/' did not contain a " \
       "required property of 'user'",
-      '[database2/comments/comment-2.yml] Invalid YAML document',
+      '[database2/comments/comment-2.yml] Blank YAML document',
       "[database2/posts/post-1.yml] Invalid primary_key: comment-1 isn't part of table comments",
       "[database2/comments/comment-4.yml] Inconsistent relationship: post-1 doesn't link back to comment-4"
     ], db.errors

@@ -63,8 +63,12 @@ module YDB
     private
 
     def build(source, schema_path)
-      doc = YAML.safe_load(File.read(source))
-      raise ValidationError, 'Invalid YAML document' if doc.nil?
+      begin
+        doc = YAML.safe_load(File.read(source))
+      rescue Psych::SyntaxError => e
+        raise ValidationError, "Invalid YAML document: #{e.message}"
+      end
+      raise ValidationError, 'Blank YAML document' if doc.nil?
 
       schema = YAML.safe_load(File.read(schema_path))
       begin
